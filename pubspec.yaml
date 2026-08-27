@@ -1,0 +1,74 @@
+name: clarastore
+description: Clarastore — clothing e-commerce with hub-and-spoke delivery for Uganda.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+
+  # Fonts matching clarastore.com exactly (Plus Jakarta Sans / DM Sans)
+  google_fonts: ^6.2.1
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Networking
+  dio: ^5.4.3+1
+  cookie_jar: ^4.0.8
+  dio_cookie_manager: ^3.1.1
+  path_provider: ^2.1.3
+
+  # Routing (role-based: customer shell vs agent shell)
+  go_router: ^14.2.0
+
+  # Secure JWT storage
+  flutter_secure_storage: ^9.2.2
+
+  # Formatting (currency, dates)
+  intl: ^0.19.0
+
+  # Local device session id for guest cart (before signup)
+  uuid: ^4.4.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+  # Generates native Android/iOS launcher icons from assets/icon/icon.png
+  # once you've run `flutter create .` to add the android/ and ios/
+  # platform folders (this project was hand-built without them — see
+  # README for the one-time setup step).
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icon/icon.png
+    - assets/images/logo.png
+
+# Run `dart run flutter_launcher_icons` after `flutter create .` to
+# generate real native app icons on every platform from this one file.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/icon.png"
+  # iOS icons must be fully opaque (no alpha channel) — Apple rejects
+  # transparent app icons outright — so this uses a separate flattened
+  # version instead of the transparent source.
+  image_path_ios: "assets/icon/icon_ios.png"
+  # Android adaptive icons: transparent foreground over a solid backdrop
+  # matching the brand's cream background, so it doesn't fall back to a
+  # jarring default white/black square on devices that mask the icon.
+  adaptive_icon_background: "#FFFAFC"
+  adaptive_icon_foreground: "assets/icon/icon.png"
+  web:
+    generate: true
+    image_path: "assets/icon/icon.png"
+    background_color: "#FFFAFC"
+    theme_color: "#FF5C9A"
