@@ -2,13 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ApiConfig {
-  // Point this at your Django backend. For local dev on an Android emulator,
-  // 10.0.2.2 maps to the host machine's localhost; on iOS simulator use
-  // localhost directly; on a physical device use your machine's LAN IP.
-  static const String baseUrl = String.fromEnvironment(
-    'API_BASE_URL',
-    defaultValue: 'http://192.168.78.196:8000/api',
-  );
+  static const String baseUrl = 'http://192.168.78.196:8000/api';
 }
 
 class OrderStatusMeta {
