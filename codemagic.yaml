@@ -1,0 +1,40 @@
+workflows:
+  android-debug:
+    name: Clarastore Android Build (Debug)
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    scripts:
+      - name: Get Flutter packages
+        script: flutter pub get
+
+      - name: Flutter analyze
+        script: flutter analyze
+        ignore_failure: true
+
+      - name: Build Android APK (debug)
+        # Debug builds automatically allow plain HTTP traffic (Flutter's
+        # template includes a debug-only manifest override for this) —
+        # unlike release builds, which block it unless you manually add
+        # android:usesCleartextTraffic="true". Using debug here removes
+        # that whole problem for local IP testing, no manifest edits
+        # needed at all.
+        script: flutter build apk --debug
+
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+
+    publishing:
+      email:
+        recipients:
+          - oloyarichard2005@gmail.com
+        notify:
+          success: true
+          failure: true

@@ -90,4 +90,3 @@ already in place. Re-run just the last command any time you swap the logo.
   resolution, and every model field cross-checked against every screen
   that reads it) but hasn't been compiled. Run `flutter analyze` first
   thing after `pub get` to catch anything that slipped through.
-# Clarastore

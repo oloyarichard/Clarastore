@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class ApiConfig {
+  // Hardcoded directly here rather than passed in via --dart-define at
+  // build time — one less place for the value to silently drift out of
+  // sync. Update this line directly whenever your local IP changes
+  // (routers often reassign it), then rebuild.
   static const String baseUrl = 'http://192.168.78.196:8000/api';
 }
 
