@@ -1,0 +1,50 @@
+workflows:
+  android-release:
+    name: Clarastore Android Build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      vars:
+        # Points the built app at your live backend. Change this to your
+        # real production API URL once it's deployed somewhere reachable
+        # from a phone (not localhost/10.0.2.2, which only work for local
+        # emulator testing).
+        API_BASE_URL: "https://api.clarastore.com/api"
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    scripts:
+      - name: Set up native platform folders + launcher icons
+        script: |
+          set -e
+          # Adds android/ and ios/ if they don't exist yet in the repo —
+          # safe no-op if they're already committed, won't overwrite
+          # anything under lib/.
+          flutter create . --platforms=android,ios
+          flutter pub get
+          # Generates real launcher icons from assets/icon/icon.png +
+          # icon_ios.png into the platform folders just created above.
+          dart run flutter_launcher_icons
+
+      - name: Flutter analyze
+        script: flutter analyze
+        ignore_failure: true
+
+      - name: Build Android APK (release)
+        script: |
+          flutter build apk --release --dart-define=API_BASE_URL=$API_BASE_URL
+
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+
+    publishing:
+      email:
+        recipients:
+          - oloyarichard2005@gmail.com
+        notify:
+          success: true
+          failure: true
