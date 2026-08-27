@@ -10,7 +10,7 @@ workflows:
         # real production API URL once it's deployed somewhere reachable
         # from a phone (not localhost/10.0.2.2, which only work for local
         # emulator testing).
-        API_BASE_URL: "https://api.clarastore.com/api"
+        API_BASE_URL: "http://192.168.78.196/api"
     triggering:
       events:
         - push
