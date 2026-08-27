@@ -5,7 +5,12 @@ workflows:
     instance_type: mac_mini_m2
     environment:
       flutter: stable
-      vars
+      vars:
+        # Replace with your machine's actual local IP (e.g. from `hostname -I`
+        # on Linux, `ipconfig getifaddr en0` on Mac). Only works for testing
+        # when your phone is on the same WiFi as this machine and your
+        # Django server is running with `runserver 0.0.0.0:8000`.
+        API_BASE_URL: "http://192.168.1.50:8000/api"
     triggering:
       events:
         - push
