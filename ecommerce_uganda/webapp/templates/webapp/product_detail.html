@@ -1,0 +1,338 @@
+{% extends 'webapp/base.html' %}
+{% load static %}
+
+{% block title %}Product| Clarastock{% endblock %}
+
+{% block content %}
+<script>window.PRODUCT_ID = {{ pk }};</script>
+<section class="tight">
+    <div class="container">
+      <div id="loading" class="spinner-center"><span class="spinner"></span></div>
+
+      <div id="product-content" style="display:none;">
+        <div class="grid grid-2" style="gap:34px;align-items:start;">
+          <div class="product-thumb" id="thumb" style="border-radius:26px;aspect-ratio:1;font-size:4rem;box-shadow:var(--shadow);"></div>
+          <div>
+            <span class="mono" style="color:var(--pink-dark);">Selected for you</span><h1 id="p-name" style="font-size:clamp(2rem,4vw,3.4rem);margin-top:8px;"></h1>
+            <div id="p-price" class="mono" style="color:var(--pink-dark);font-size:1.3rem;margin-bottom:20px;"></div>
+            <p id="p-description" class="muted"></p>
+
+            <div id="oos-notice" style="display:none;color:var(--danger);margin:16px 0;">Out of stock.</div>
+
+            <div id="size-block" style="margin:24px 0;display:none;">
+              <label class="mono" style="display:block;color:var(--muted);font-size:0.8rem;margin-bottom:8px;">Size</label>
+              <div id="size-options" class="chip-group"></div>
+            </div>
+
+            <div id="qty-block" style="margin:24px 0;">
+              <div class="qty-control">
+                <button id="qty-minus" type="button">&minus;</button>
+                <span id="qty-value">1</span>
+                <button id="qty-plus" type="button">+</button>
+              </div>
+            </div>
+
+            <div id="action-row" style="display:flex;gap:12px;flex-wrap:wrap;">
+              <button id="add-btn" class="btn btn-gold" style="min-width:180px;">Add to cart</button>
+              <button id="negotiate-open-btn" class="btn btn-outline" style="min-width:180px;">Make an offer</button>
+            </div>
+
+            <!-- Negotiation chat panel — hidden until "Make an offer" is clicked -->
+            <div id="negotiate-panel" style="display:none;margin-top:28px;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:#fff;">
+              <div style="padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <div style="font-weight:700;">Name your price</div>
+                  <div class="muted" style="font-size:0.82rem;">Our assistant will consider it — no pressure to commit.</div>
+                </div>
+                <button id="negotiate-close-btn" type="button" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.3rem;line-height:1;">&times;</button>
+              </div>
+
+              <div id="chat-thread" class="chat-thread"></div>
+
+              <div id="chat-typing" class="chat-typing" style="display:none;">
+                <div class="chat-bubble ai typing"><span></span><span></span><span></span></div>
+              </div>
+
+              <div id="counter-actions" class="counter-actions" style="display:none;">
+                <button id="counter-accept-btn" class="btn btn-gold" type="button">Accept <span id="counter-price"></span></button>
+                <button id="counter-decline-btn" class="btn btn-outline" type="button">Propose a different amount</button>
+              </div>
+
+              <div id="offer-input-row" class="offer-input-row">
+                <input type="number" id="offer-amount" placeholder="Enter your offer in UGX" min="1">
+                <button id="offer-send-btn" class="btn btn-gold" type="button">Send</button>
+              </div>
+
+              <div id="deal-actions" style="display:none;padding:16px 20px;">
+                <a href="{% url 'webapp:cart' %}" class="btn btn-gold" style="width:100%;display:block;text-align:center;box-sizing:border-box;">View cart &rarr;</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let product = null;
+const id = window.PRODUCT_ID;
+let quantity = 1;
+let negotiation = null; // current NegotiationSession, once started
+
+document.addEventListener('DOMContentLoaded', async () => {
+  renderAuthNav();
+
+  try {
+    product = await apiFetch(`/products/${id}/`, { auth: false });
+    renderProduct();
+  } catch (e) {
+    showError(e);
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+  }
+
+  document.getElementById('qty-minus').addEventListener('click', () => {
+    if (quantity > 1) { quantity--; document.getElementById('qty-value').textContent = quantity; }
+  });
+  document.getElementById('qty-plus').addEventListener('click', () => {
+    if (quantity < product.stock) { quantity++; document.getElementById('qty-value').textContent = quantity; }
+  });
+  document.getElementById('add-btn').addEventListener('click', addToCart);
+
+  document.getElementById('negotiate-open-btn').addEventListener('click', openNegotiatePanel);
+  document.getElementById('negotiate-close-btn').addEventListener('click', () => {
+    document.getElementById('negotiate-panel').style.display = 'none';
+  });
+  document.getElementById('offer-send-btn').addEventListener('click', sendOffer);
+  document.getElementById('offer-amount').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') sendOffer();
+  });
+  document.getElementById('counter-accept-btn').addEventListener('click', acceptCounter);
+  document.getElementById('counter-decline-btn').addEventListener('click', () => {
+    document.getElementById('counter-actions').style.display = 'none';
+    document.getElementById('offer-input-row').style.display = 'flex';
+    document.getElementById('offer-amount').focus();
+  });
+});
+
+// Sizing behavior is now driven directly by the product's structured
+// category (clothes/trousers/shoes/accessories/other) rather than
+// guessing from free-text keywords — reliable by construction, since
+// the category itself is now a fixed admin-selected choice.
+const CLOTHES_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+const TROUSER_WAIST_SIZES = ['28', '30', '32', '34', '36', '38', '40', '42'];
+const SHOE_SIZES_UK = ['3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
+
+let selectedSize = '';
+
+function getSizeConfig(category) {
+  if (category === 'clothes') return { label: 'Size', options: CLOTHES_SIZES };
+  if (category === 'trousers') return { label: 'Waist size', options: TROUSER_WAIST_SIZES };
+  if (category === 'shoes') return { label: 'Size (UK)', options: SHOE_SIZES_UK };
+  return null; // accessories, other — no sizing at all
+}
+
+function renderSizeOptions() {
+  const config = getSizeConfig(product.category);
+  if (!config) return; // this product doesn't need a size at all
+
+  document.querySelector('#size-block label').textContent = config.label;
+  document.getElementById('size-options').innerHTML = config.options.map((s, i) => `
+    <div class="chip${i === 0 ? ' selected' : ''}" data-size="${s}">${s}</div>
+  `).join('');
+  selectedSize = config.options[0];
+
+  document.querySelectorAll('#size-options .chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('#size-options .chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      selectedSize = chip.dataset.size;
+    });
+  });
+
+  document.getElementById('size-block').style.display = 'block';
+}
+
+function renderProduct() {
+  document.getElementById('product-content').style.display = 'block';
+  document.getElementById('p-name').textContent = product.name;
+  document.getElementById('p-price').textContent = formatUGX(product.price);
+  document.getElementById('p-description').textContent = product.description || '';
+  document.getElementById('thumb').innerHTML = product.image
+    ? `<img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" style="width:100%;height:100%;object-fit:cover;">`
+    : productPlaceholderIcon();
+
+  renderSizeOptions();
+
+  if (!product.is_in_stock) {
+    document.getElementById('oos-notice').style.display = 'block';
+    document.getElementById('qty-block').style.display = 'none';
+    document.getElementById('size-block').style.display = 'none';
+    document.getElementById('add-btn').disabled = true;
+    document.getElementById('negotiate-open-btn').disabled = true;
+  }
+}
+
+async function addToCart() {
+  const btn = document.getElementById('add-btn');
+  btn.disabled = true;
+  btn.textContent = 'Adding...';
+  try {
+    const body = { product_id: product.id, quantity };
+    if (selectedSize) body.size = selectedSize;
+    await apiFetch('/cart/', { method: 'POST', body });
+    showToast('Added to cart');
+    const cart = await apiFetch('/cart/');
+    updateCartBadge(cart.count || 0);
+  } catch (e) {
+    showError(e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Add to cart';
+  }
+}
+
+// ---------------------------------------------------------------------
+// Negotiation chat
+// ---------------------------------------------------------------------
+
+async function openNegotiatePanel() {
+  document.getElementById('negotiate-panel').style.display = 'block';
+  document.getElementById('negotiate-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  if (negotiation) return; // already started, just re-showing the panel
+
+  try {
+    negotiation = await apiFetch('/negotiations/start/', {
+      method: 'POST',
+      body: { product_id: product.id },
+    });
+    addChatBubble('ai', "Hi! What would you like to pay for this?");
+  } catch (e) {
+    showError(e);
+    document.getElementById('negotiate-panel').style.display = 'none';
+  }
+}
+
+async function sendOffer() {
+  const input = document.getElementById('offer-amount');
+  const amount = parseFloat(input.value);
+  if (!amount || amount <= 0) {
+    showToast('Enter a valid amount.', true);
+    return;
+  }
+
+  // A previous REJECT ends that negotiation session for good (the backend
+  // correctly refuses further offers against it) — trying again means
+  // starting a genuinely new session, not reusing the dead one.
+  if (!negotiation || negotiation.status !== 'active') {
+    try {
+      negotiation = await apiFetch('/negotiations/start/', {
+        method: 'POST',
+        body: { product_id: product.id },
+      });
+    } catch (e) {
+      showError(e);
+      return;
+    }
+  }
+
+  addChatBubble('customer', `I can pay ${formatUGX(amount)}.`);
+  input.value = '';
+  setSendingState(true);
+
+  try {
+    const result = await apiFetch(`/negotiations/${negotiation.id}/offer/`, {
+      method: 'POST',
+      body: { amount },
+    });
+    negotiation = result.negotiation;
+    const reply = result.latest_response;
+    addChatBubble('ai', reply.message);
+    handleNegotiationOutcome(reply.decision, reply.amount);
+  } catch (e) {
+    showError(e);
+    addChatBubble('ai', "Sorry, something went wrong on our end — try again in a moment.");
+  } finally {
+    setSendingState(false);
+  }
+}
+
+function handleNegotiationOutcome(decision, price) {
+  if (decision === 'ACCEPT') {
+    document.getElementById('offer-input-row').style.display = 'none';
+    document.getElementById('counter-actions').style.display = 'none';
+    document.getElementById('deal-actions').style.display = 'block';
+    updateCartBadgeAfterAgreement();
+  } else if (decision === 'REJECT') {
+    // This negotiation session is over — the next offer sent will
+    // silently start a fresh one (see sendOffer), so just let them
+    // know a new offer is a new conversation, not a continuation.
+    addChatBubble('ai', "Feel free to try a different offer.");
+    document.getElementById('counter-actions').style.display = 'none';
+    document.getElementById('offer-input-row').style.display = 'flex';
+  } else if (decision === 'COUNTER') {
+    // Give them a clear, one-tap way to take the AI's own price rather
+    // than needing to type the exact number back — accepting this way
+    // finalizes immediately server-side, no second AI call needed.
+    document.getElementById('counter-price').textContent = formatUGX(price);
+    document.getElementById('counter-actions').style.display = 'flex';
+    document.getElementById('offer-input-row').style.display = 'none';
+  }
+}
+
+async function acceptCounter() {
+  const acceptBtn = document.getElementById('counter-accept-btn');
+  const declineBtn = document.getElementById('counter-decline-btn');
+  acceptBtn.disabled = true;
+  declineBtn.disabled = true;
+  acceptBtn.textContent = 'Confirming...';
+
+  try {
+    const result = await apiFetch(`/negotiations/${negotiation.id}/accept-counter/`, { method: 'POST' });
+    negotiation = result.negotiation;
+    addChatBubble('customer', `I'll take it at ${formatUGX(result.agreed_price)}.`);
+    addChatBubble('ai', "Deal!");
+    handleNegotiationOutcome('ACCEPT');
+  } catch (e) {
+    showError(e);
+    addChatBubble('ai', "Sorry, that offer isn't available anymore — try sending a new one.");
+    document.getElementById('counter-actions').style.display = 'none';
+    document.getElementById('offer-input-row').style.display = 'flex';
+  } finally {
+    acceptBtn.disabled = false;
+    declineBtn.disabled = false;
+    acceptBtn.innerHTML = 'Accept <span id="counter-price"></span>';
+  }
+}
+
+async function updateCartBadgeAfterAgreement() {
+  try {
+    const cart = await apiFetch('/cart/');
+    updateCartBadge(cart.count || 0);
+  } catch (e) { /* non-fatal */ }
+}
+
+function addChatBubble(who, text) {
+  const thread = document.getElementById('chat-thread');
+  const bubble = document.createElement('div');
+  bubble.className = `chat-bubble ${who}`;
+  bubble.textContent = text;
+  thread.appendChild(bubble);
+  thread.scrollTop = thread.scrollHeight;
+}
+
+function setSendingState(isSending) {
+  document.getElementById('offer-send-btn').disabled = isSending;
+  document.getElementById('offer-amount').disabled = isSending;
+  const typing = document.getElementById('chat-typing');
+  typing.style.display = isSending ? 'block' : 'none';
+  if (isSending) {
+    const thread = document.getElementById('chat-thread');
+    thread.scrollTop = thread.scrollHeight;
+  }
+}
+</script>
+{% endblock %}

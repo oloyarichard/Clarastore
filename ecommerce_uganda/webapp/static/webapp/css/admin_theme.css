@@ -1,0 +1,256 @@
+/* ============================================================
+   Clarastock admin — full re-skin, not just a recolor.
+   Matches clarastock.com exactly: same hex values, same fonts
+   (Plus Jakarta Sans / DM Sans), rounded cards, soft shadows.
+   Overrides Django's own CSS custom properties first (wide
+   coverage), then restructures the pieces that aren't
+   variable-driven so this stops reading as "Django admin."
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=DM+Sans:wght@400;500;600&display=swap');
+
+:root, html[data-theme="dark"], html[data-theme="light"] {
+    --primary: #ff5c9a;
+    --secondary: #211b24;
+    --accent: #ff5c9a;
+    --primary-fg: #ffffff;
+
+    --body-fg: #211b24;
+    --body-bg: #fffafc;
+    --body-quiet-color: #817782;
+    --body-loud-color: #211b24;
+
+    --header-color: #211b24;
+    --header-branding-color: #ff5c9a;
+    --header-bg: #ffffff;
+    --header-link-color: #211b24;
+
+    --breadcrumbs-fg: #817782;
+    --breadcrumbs-link-fg: #e94382;
+    --breadcrumbs-bg: #fff1f6;
+
+    --link-fg: #e94382;
+    --link-hover-color: #ff5c9a;
+    --link-selected-fg: #e94382;
+
+    --hairline-color: #eee3e9;
+    --border-color: #eee3e9;
+
+    --error-fg: #df5b68;
+
+    --message-success-bg: #eafaf3;
+    --message-warning-bg: #fff8e6;
+    --message-error-bg: #fff0f0;
+
+    --darkened-bg: #fff1f6;
+    --selected-bg: #fff1f6;
+    --selected-row: #fff8fb;
+
+    --button-fg: #ffffff;
+    --button-bg: #ff5c9a;
+    --button-hover-bg: #e94382;
+    --default-button-bg: #211b24;
+    --default-button-hover-bg: #3a3040;
+    --close-button-bg: #eee3e9;
+    --close-button-hover-bg: #e0d2da;
+    --delete-button-bg: #df5b68;
+    --delete-button-hover-bg: #c73e4a;
+
+    --object-tools-fg: #ffffff;
+    --object-tools-bg: #211b24;
+    --object-tools-hover-bg: #3a3040;
+
+    --font-family-primary: 'DM Sans', -apple-system, sans-serif;
+    --font-family-monospace: 'DM Sans', monospace;
+}
+
+/* ---------- Global shape language: rounded, soft-shadowed, not boxy ---------- */
+
+body { -webkit-font-smoothing: antialiased; }
+
+#header {
+    border-bottom: 1px solid var(--hairline-color);
+    box-shadow: 0 2px 12px rgba(45,25,42,.04);
+}
+
+#site-name, #site-name a {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--body-fg) !important;
+}
+#site-name a {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+.cs-admin-logo {
+    height: 28px;
+    width: auto;
+    display: block;
+}
+/* Login page: bigger, centered logo above the "Clarastock Admin" text */
+.login #site-name a {
+    flex-direction: column;
+    gap: 6px;
+}
+.login .cs-admin-logo {
+    height: 48px;
+}
+
+h1, h2, h3, .module h2, .module caption, .inline-group h2 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+}
+
+/* Modules / cards: rounded, bordered, no harsh dark headers */
+.module, #content-related .module {
+    border-radius: 16px;
+    border: 1px solid var(--hairline-color);
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(45,25,42,.05);
+}
+.module h2, .module caption, .inline-group h2 {
+    background: #fff !important;
+    color: var(--body-fg) !important;
+    border-bottom: 1px solid var(--hairline-color);
+    padding: 14px 18px !important;
+    font-size: 0.95rem;
+}
+
+/* Buttons: pill-shaped like the storefront, not square Django buttons */
+.button, input[type="submit"], input[type="button"], .submit-row input, a.button {
+    border-radius: 10px !important;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    padding: 10px 18px !important;
+    border: none;
+    transition: transform .12s ease, opacity .12s ease;
+}
+.button:hover, input[type="submit"]:hover { transform: translateY(-1px); opacity: .95; }
+.object-tools a { border-radius: 10px !important; font-weight: 600; }
+
+/* Tables: soft alternating rows, rounded container, no hard grid lines */
+#changelist { border-radius: 16px; overflow: hidden; border: 1px solid var(--hairline-color); }
+#changelist table thead th {
+    background: var(--darkened-bg);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 700;
+    font-size: 0.82rem;
+    border-bottom: none;
+}
+table tbody tr.row-even { background: #fffcfd; }
+table tbody tr:hover { background: var(--selected-bg) !important; }
+table, td, th { border-color: var(--hairline-color) !important; }
+
+/* Filter sidebar: card-like, matching module style */
+#changelist-filter {
+    border-radius: 16px;
+    border: 1px solid var(--hairline-color);
+    background: #fff;
+    box-shadow: 0 6px 20px rgba(45,25,42,.05);
+}
+#changelist-filter h2 {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: #fff;
+    color: var(--body-fg);
+}
+#changelist-filter li.selected a { color: var(--primary) !important; font-weight: 600; }
+
+/* Search box */
+#changelist-search #searchbar, #toolbar input[type="text"] {
+    border-radius: 10px;
+    border: 1px solid var(--hairline-color);
+    padding: 8px 14px;
+}
+#toolbar { padding: 16px !important; }
+
+/* Form inputs: match the storefront's rounded fields */
+input, textarea, select, .vTextField {
+    background: #fff;
+    color: var(--body-fg);
+    border: 1px solid var(--hairline-color) !important;
+    border-radius: 10px !important;
+    padding: 8px 12px !important;
+}
+input:focus, textarea:focus, select:focus {
+    border-color: var(--primary) !important;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255,92,154,.12);
+}
+
+/* Sidebar nav */
+.nav-sidebar {
+    background: #fff;
+    border-right: 1px solid var(--hairline-color);
+}
+.nav-sidebar a:link, .nav-sidebar a:visited { color: var(--body-fg); font-weight: 500; }
+.nav-sidebar a:hover, .nav-sidebar a:focus { color: var(--primary); }
+.nav-sidebar button.current-model, .nav-sidebar .current-app .section { color: var(--primary); font-weight: 700; }
+.nav-sidebar .current-model { background: var(--darkened-bg); border-radius: 8px; }
+
+/* Messages / alerts */
+.messagelist li { border-radius: 12px; border: 1px solid transparent; font-weight: 500; }
+.messagelist li.success { border-color: #bfe9d4; }
+.messagelist li.error { border-color: #f3c2c6; }
+
+/* Breadcrumbs */
+div.breadcrumbs {
+    background: var(--breadcrumbs-bg);
+    border-bottom: 1px solid var(--hairline-color);
+    font-weight: 500;
+}
+
+/* Login page: centered card, matching the storefront's form-page look */
+.login { background: var(--darkened-bg); }
+.login #container {
+    background: #fff;
+    border: 1px solid var(--hairline-color);
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(45,25,42,.1);
+    max-width: 380px;
+    margin-top: 80px;
+}
+.login #header { background: transparent; border-bottom: none; text-align: center; padding-top: 32px; }
+.login .form-row { padding: 8px 0; }
+.login .submit-row { text-align: center; }
+.login .submit-row input {
+    width: 100%; background: var(--primary); border-radius: 10px !important;
+    padding: 12px !important; font-weight: 700;
+}
+
+/* Calendar / clock widgets */
+.calendar caption, .calendarbox h2 { background: #fff; color: var(--body-fg); font-weight: 700; }
+.calendar td a:hover, .timelist a:hover { background: var(--primary) !important; color: #fff !important; border-radius: 6px; }
+
+/* Dashboard stat cards (custom index template) */
+.cs-dashboard { padding: 8px 4px 24px; }
+.cs-stats-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px; margin-bottom: 32px;
+}
+.cs-stat-card {
+    background: #fff; border: 1px solid var(--hairline-color); border-radius: 16px;
+    padding: 20px; box-shadow: 0 6px 20px rgba(45,25,42,.05);
+}
+.cs-stat-card .cs-stat-label {
+    font-size: 0.78rem; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--body-quiet-color); font-weight: 600; margin-bottom: 8px;
+}
+.cs-stat-card .cs-stat-value {
+    font-family: 'Plus Jakarta Sans', sans-serif; font-size: 1.9rem; font-weight: 800; color: var(--body-fg);
+}
+.cs-stat-card.cs-alert .cs-stat-value { color: var(--error-fg); }
+.cs-stat-card.cs-accent { border-color: #ffd3e4; background: #fff5f9; }
+.cs-stat-card.cs-accent .cs-stat-value { color: var(--primary); }
+
+.cs-section-title {
+    font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: 1.1rem;
+    margin: 32px 0 14px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--darkened-bg); }
+::-webkit-scrollbar-thumb { background: #f0b8cd; border-radius: 5px; }
+::-webkit-scrollbar-thumb:hover { background: var(--primary); }

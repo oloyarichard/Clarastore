@@ -1,0 +1,26 @@
+{% extends 'webapp/base.html' %}
+{% load static %}
+
+{% block title %}Top up a customer| Clarastock{% endblock %}
+
+{% block content %}
+<section class="tight">
+    <div class="container form-page">
+      <h1 style="font-size:1.6rem;">Top up a customer</h1>
+
+      <div class="callout" style="margin:20px 0;">
+        Customer wallet top-ups are now handled by our team directly, not by agents in person.
+        Please contact support if a customer needs a wallet adjustment.
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  requireAgent();
+  renderAuthNav();
+});
+</script>
+{% endblock %}

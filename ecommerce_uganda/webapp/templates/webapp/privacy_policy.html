@@ -1,0 +1,147 @@
+{% extends 'webapp/base.html' %}
+{% load static %}
+
+{% block title %}Privacy Policy| Clarastock{% endblock %}
+{% block description %}How Clarastock collects, uses, and protects your information.{% endblock %}
+
+{% block content %}
+<section class="tight">
+    <div class="container">
+      <span class="hero-eyebrow mono">Legal</span>
+      <h1>Privacy Policy</h1>
+      <p class="policy-meta">Effective date: 22 August 2026 · Applies to clarastock.com and the Clarastock app</p>
+
+      <div class="policy-body">
+
+        <div class="toc">
+          <span class="mono">On this page</span>
+          <ol>
+            <li><a href="#who">Who we are</a></li>
+            <li><a href="#collect">Information we collect</a></li>
+            <li><a href="#use">How we use it</a></li>
+            <li><a href="#share">Who we share it with</a></li>
+            <li><a href="#wallet">Wallet &amp; payment data</a></li>
+            <li><a href="#cookies">Cookies &amp; similar technology</a></li>
+            <li><a href="#retention">How long we keep it</a></li>
+            <li><a href="#rights">Your rights</a></li>
+            <li><a href="#security">Security</a></li>
+            <li><a href="#transfers">International transfers</a></li>
+            <li><a href="#children">Children</a></li>
+            <li><a href="#changes">Changes to this policy</a></li>
+            <li><a href="#contact">Contact us</a></li>
+          </ol>
+        </div>
+
+        <h2 id="who">1. Who we are</h2>
+        <p>Clarastock ("Clarastock", "we", "us", "our") operates the
+        clarastock.com website and the Clarastock mobile app, an online
+        clothing marketplace with delivery across Uganda. This policy
+        explains what personal information we collect when you use either,
+        why we collect it, and the choices you have.</p>
+        <p>For any question about this policy, you can reach us at
+        <strong>+256 394 907 713</strong> or privacy@clarastock.com.</p>
+
+        <h2 id="collect">2. Information we collect</h2>
+        <p>When you create an account, we collect your name, email address,
+        phone number, and delivery district. We also keep a record of the
+        products you order, your cart activity, and your order and delivery
+        history.</p>
+        <p>If you're an agent, we additionally hold your assigned hub
+        district and your delivery and commission activity.</p>
+        <p>If you contact us by phone or WhatsApp, we may keep a record of
+        that conversation to help resolve your query and improve our
+        support.</p>
+        <p>We do not track your location continuously: only the delivery
+        district you provide at signup or checkout.</p>
+
+        <h2 id="use">3. How we use it</h2>
+        <ul>
+          <li>To create and maintain your account</li>
+          <li>To process orders, route them to the correct hub, and assign a delivery agent</li>
+          <li>To calculate and credit wallet balances, commissions, and refunds</li>
+          <li>To contact you about an order: including delivery updates and confirmation requests, by app notification, SMS, or phone call where necessary</li>
+          <li>To investigate a flagged or undelivered order</li>
+          <li>To respond to support requests made by phone, WhatsApp, or email</li>
+        </ul>
+
+        <h2 id="share">4. Who we share it with</h2>
+        <p>Your name, phone number, and delivery address are shared with
+        the agent assigned to your order: they need this to complete
+        delivery. For orders forwarded beyond a hub town, the transport
+        contact (taxi/bus driver) may be given your phone number solely to
+        coordinate handoff. We do not sell your information to advertisers
+        or other third parties.</p>
+        <p>We share the minimum information necessary with:</p>
+        <ul>
+          <li><strong>MTN Uganda and Airtel Uganda</strong>: to process wallet top-ups via MTN MoMo or Airtel Money</li>
+          <li><strong>Delivery agents</strong>: your name, phone number, and delivery address, for orders assigned to them</li>
+          <li><strong>Law enforcement or regulators</strong>: only where required by Ugandan law, or to protect the rights, safety, or property of Clarastock, our users, or the public</li>
+        </ul>
+
+        <h2 id="wallet">5. Wallet &amp; payment data</h2>
+        <p>Every wallet transaction: top-ups, payments, commissions, and
+        refunds: is kept as a permanent record for accounting and dispute
+        resolution. Wallet transaction records are never deleted, even if
+        you close your account, because they form part of our financial
+        record-keeping obligations under Ugandan law.</p>
+        <p>We do not store your mobile money PIN or full payment
+        credentials: top-ups are authorized directly through MTN or
+        Airtel's own systems, not through Clarastock.</p>
+
+        <h2 id="cookies">6. Cookies &amp; similar technology</h2>
+        <p>clarastock.com uses a session cookie to keep track of your cart
+        before you sign in, and a security cookie (CSRF token) to protect
+        your account from cross-site request forgery. We don't use
+        third-party advertising or tracking cookies.</p>
+
+        <h2 id="retention">7. How long we keep it</h2>
+        <p>We keep your account and order information for as long as your
+        account is active, and for a reasonable period afterward to meet
+        legal, accounting, and dispute-resolution requirements. Wallet
+        transaction records are retained permanently, as described above.</p>
+
+        <h2 id="rights">8. Your rights</h2>
+        <p>You can request a copy of the personal information we hold about
+        you, ask us to correct inaccurate details, or request that we
+        delete your account. Some records: particularly wallet transaction
+        history: may be retained even after account deletion where we
+        have a legal or financial record-keeping obligation to do so.</p>
+        <p>To make a request, call us on <strong>+256 394 907 713</strong>,
+        email privacy@clarastock.com, or use the
+        <a href="{% url 'webapp:contact' %}">Contact page</a>.</p>
+
+        <h2 id="security">9. Security</h2>
+        <p>We use industry-standard measures: including encrypted
+        connections, access controls, and CSRF protection: to safeguard
+        your information. No system is completely secure, and we encourage
+        you to use a strong, unique password for your account and never
+        share your login details or mobile money PIN with anyone, including
+        anyone claiming to be from Clarastock.</p>
+
+        <h2 id="transfers">10. International transfers</h2>
+        <p>Our infrastructure providers may process data outside Uganda. Where
+        this happens, we take reasonable steps to ensure your information
+        continues to receive an appropriate level of protection consistent
+        with Uganda's Data Protection and Privacy Act, 2019.</p>
+
+        <h2 id="children">11. Children</h2>
+        <p>Clarastock is not intended for use by anyone under 18. We do not
+        knowingly collect information from children.</p>
+
+        <h2 id="changes">12. Changes to this policy</h2>
+        <p>We may update this policy from time to time. Material changes will
+        be reflected by an updated effective date at the top of this page,
+        and where appropriate, we'll notify you directly.</p>
+
+        <h2 id="contact">13. Contact us</h2>
+        <p>Questions about this policy or your data:</p>
+        <ul>
+          <li>Phone / WhatsApp: <a href="tel:+256394907713">+256 394 907 713</a></li>
+          <li>Email: privacy@clarastock.com</li>
+          <li><a href="{% url 'webapp:contact' %}">Contact page</a></li>
+        </ul>
+
+      </div>
+    </div>
+  </section>
+{% endblock %}

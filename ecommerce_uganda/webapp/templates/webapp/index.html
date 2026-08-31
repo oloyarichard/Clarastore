@@ -1,0 +1,102 @@
+{% extends 'webapp/base.html' %}
+{% load static %}
+
+{% block title %}Clarastock: Clothing, delivered to every district{% endblock %}
+{% block description %}Order clothing online and get it delivered anywhere in Uganda: direct in hub towns, forwarded by taxi or bus everywhere else.{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <div class="hero-shell">
+      <span class="hero-eyebrow mono">New season · made easy</span>
+      <h1>Find something cute. We’ll get it to you.</h1>
+      <p class="hero-sub">A warm, simple shopping experience for Uganda: beautiful finds, transparent prices and delivery that follows the routes people already trust.</p>
+      <div class="hero-ctas">
+        <a href="{% url 'webapp:shop' %}" class="btn btn-gold">Shop the collection →</a>
+        <a href="{% url 'webapp:delivery_refunds' %}" class="btn btn-outline">See delivery</a>
+      </div>
+      <div class="route-map">
+        <div class="route-track">
+          <div class="route-line"></div>
+          <div class="route-node"><span class="route-dot"></span><span class="mono">01</span><span class="route-label">Kampala</span><span class="route-type">Direct</span></div>
+          <div class="route-node"><span class="route-dot"></span><span class="mono">02</span><span class="route-label">Mbarara</span><span class="route-type">Direct</span></div>
+          <div class="route-node"><span class="route-dot"></span><span class="mono">03</span><span class="route-label">Gulu</span><span class="route-type">Direct</span></div>
+          <div class="route-node"><span class="route-dot"></span><span class="mono">04</span><span class="route-label">Mbale</span><span class="route-type">Direct</span></div>
+          <div class="route-node"><span class="route-dot"></span><span class="mono">05</span><span class="route-label">Everywhere</span><span class="route-type">Forwarded</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+  <section class="section-border-top">
+    <div class="container">
+      <div class="section-head">
+        <span class="mono">How it works</span>
+        <h2>From cart to confirmed, in four steps</h2>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">01</div>
+          <h3>Browse and add to cart</h3>
+          <p>No account needed to look around: sign up only when you're ready to pay.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">02</div>
+          <h3>Pay from your wallet</h3>
+          <p>Top up with MTN MoMo, Airtel Money, or in person through a local agent.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">03</div>
+          <h3>An agent picks it up</h3>
+          <p>Delivered directly in hub towns, or dispatched by taxi or bus everywhere else.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">04</div>
+          <h3>You confirm it arrived</h3>
+          <p>One tap in the app. If something's wrong, we investigate: and refund to your wallet.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-border-top">
+    <div class="container">
+      <div class="section-head">
+        <span class="mono">Why it's built this way</span>
+        <h2>Designed for how goods actually move in Uganda</h2>
+      </div>
+      <div class="grid grid-3">
+        <div class="card">
+          <span class="mono">Coverage</span>
+          <h3>Reaches sub-districts without needing an agent everywhere</h3>
+          <p class="muted">Hub agents forward parcels along real taxi and bus routes, not
+          a courier network that only reaches five towns.</p>
+        </div>
+        <div class="card">
+          <span class="mono">Trust</span>
+          <h3>Confirmation, not assumption</h3>
+          <p class="muted">You confirm delivery yourself. If you don't, we notice:
+          orders auto-flag after 24 hours of silence and get investigated.</p>
+        </div>
+        <div class="card">
+          <span class="mono">Money</span>
+          <h3>One wallet for everything</h3>
+          <p class="muted">Pay, get refunded, or top up in person through an agent:
+          all through the same balance, never deleted, always traceable.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-border-top">
+    <div class="container" style="text-align:center;">
+      <h2>Get the app to start ordering</h2>
+      <p class="muted" style="max-width:50ch;margin:0 auto 28px;">
+        Available on Android, iOS, and directly in your browser: no install required.
+      </p>
+      <a href="{% url 'webapp:download' %}" class="btn btn-gold">See download options</a>
+    </div>
+  </section>
+{% endblock %}
+

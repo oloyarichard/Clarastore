@@ -1,0 +1,60 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Clarastock{% endblock %}</title>
+<meta name="description" content="{% block description %}Cute, simple shopping with delivery across Uganda.{% endblock %}">
+<link rel="icon" type="image/png" href="{% static 'webapp/img/favicon.png' %}">
+<link rel="apple-touch-icon" href="{% static 'webapp/img/apple-touch-icon.png' %}">
+<link rel="stylesheet" href="{% static 'webapp/css/style.css' %}?v=3">
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+{% csrf_token %}
+<header class="site-header">
+  <div class="container">
+    <a href="{% url 'webapp:home' %}" class="brand"><img src="{% static 'webapp/img/logo.png' %}" alt="Clarastock" class="brand-mark"> Clarastock</a>
+    <nav class="nav-links">
+      <a href="{% url 'webapp:home' %}"{% if active_page == 'home' %} class="active"{% endif %}>Home</a>
+      <a href="{% url 'webapp:shop' %}"{% if active_page == 'shop' %} class="active"{% endif %}>Shop</a>
+      <a href="{% url 'webapp:download' %}"{% if active_page == 'download' %} class="active"{% endif %}>App</a>
+      <a href="{% url 'webapp:delivery_refunds' %}"{% if active_page == 'delivery' %} class="active"{% endif %}>Delivery</a>
+      <a href="{% url 'webapp:contact' %}"{% if active_page == 'contact' %} class="active"{% endif %}>Help</a>
+      <a href="{% url 'webapp:cart' %}" id="nav-cart-slot" class="nav-cart-badge{% if active_page == 'cart' %} active{% endif %}">Cart<span id="cart-count" class="cart-count">0</span></a>
+      <span id="nav-auth-slot"></span>
+    </nav>
+    <button class="mobile-toggle" aria-label="Menu">&#9776;</button>
+  </div>
+</header>
+<main>{% block content %}{% endblock %}</main>
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <a href="{% url 'webapp:home' %}" class="brand"><img src="{% static 'webapp/img/logo.png' %}" alt="Clarastock" class="brand-mark"> Clarastock</a>
+        <p style="margin-top:14px;max-width:34ch;">Thoughtful finds, easy checkout and delivery from Kampala to districts across Uganda.</p>
+      </div>
+      <div><h4>Shop</h4><a href="{% url 'webapp:shop' %}">Browse</a><a href="{% url 'webapp:cart' %}">Cart</a><a href="{% url 'webapp:delivery_refunds' %}">Delivery</a></div>
+      <div><h4>Account</h4><a href="{% url 'webapp:orders' %}">Orders</a><a href="{% url 'webapp:wallet' %}">Wallet</a><a href="{% url 'webapp:download' %}">Get the app</a></div>
+      <div><h4>Company</h4><a href="{% url 'webapp:contact' %}">Contact</a><a href="tel:+256394907713">+256 394 907 713</a><a href="{% url 'webapp:privacy_policy' %}">Privacy</a><a href="{% url 'webapp:terms_of_service' %}">Terms</a></div>
+    </div>
+    <div class="footer-bottom"><span>&copy; 2026 Clarastock &middot; clarastock.com</span><span class="mono">Made for Uganda · Kampala · Gulu · Mbarara · Mbale</span></div>
+    <div class="footer-routes">
+      <span>Kampala · Direct</span>
+      <span>Mbarara · Direct</span>
+      <span>Gulu · Direct</span>
+      <span>Mbale · Direct</span>
+      <span>Everywhere else · Forwarded by taxi/bus</span>
+    </div>
+  </div>
+</footer>
+{% block modals %}{% endblock %}
+<script src="{% static 'webapp/js/api.js' %}?v=3"></script>
+<script src="{% static 'webapp/js/auth.js' %}?v=3"></script>
+<script src="{% static 'webapp/js/app.js' %}?v=3"></script>
+<script src="{% static 'webapp/js/site.js' %}?v=3"></script>
+<script>document.addEventListener('DOMContentLoaded', renderAuthNav);</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,68 @@
+{% extends 'webapp/base.html' %}
+{% load static %}
+
+{% block title %}Contact| Clarastock{% endblock %}
+{% block description %}Get in touch with Clarastock: call, WhatsApp, or email us.{% endblock %}
+
+{% block content %}
+<section class="tight">
+    <div class="container">
+      <span class="hero-eyebrow mono">Get in touch</span>
+      <h1 style="max-width:16ch;">Questions, order issues, or want to become an agent?</h1>
+
+      <div class="contact-grid" style="margin-top:48px;">
+        <div>
+          <div class="contact-item">
+            <span class="mono">Call or WhatsApp</span>
+            <p style="margin:0;">
+              <a href="tel:+256394907713" style="color:var(--ink);font-weight:700;font-size:1.05rem;">+256 394 907 713</a><br>
+              <span class="muted">Mon–Sat, 8:00 AM – 7:00 PM (EAT)</span>
+            </p>
+          </div>
+          <div class="contact-item">
+            <span class="mono">Customer support</span>
+            <p style="margin:0;">support@clarastock.com</p>
+          </div>
+          <div class="contact-item">
+            <span class="mono">Order &amp; delivery issues</span>
+            <p style="margin:0;">Use the "Not received" or "Contact support"
+            option on your order in the app: it comes with your order ID
+            attached, which speeds up investigation. For anything urgent,
+            call or WhatsApp us directly.</p>
+          </div>
+          <div class="contact-item">
+            <span class="mono">Become an agent</span>
+            <p style="margin:0;">agents@clarastock.com or call us directly:
+            we're always looking for reliable agents in our hub towns.</p>
+          </div>
+          <div class="contact-item">
+            <span class="mono">Data &amp; privacy requests</span>
+            <p style="margin:0;">privacy@clarastock.com<br>
+            <span class="muted">See our <a href="{% url 'webapp:privacy_policy' %}">Privacy Policy</a> for details</span></p>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <span class="mono">Hub locations</span>
+            <h3 style="margin-top:10px;">Where our agents are based</h3>
+            <p class="muted" style="margin-bottom:0;">
+              Kampala &middot; Mbarara &middot; Gulu &middot; Mbale &middot; Tororo–Busia<br><br>
+              Every other district is reached by forwarding your order from
+              the nearest hub via taxi or bus.
+            </p>
+          </div>
+          <div class="card" style="margin-top:20px;">
+            <span class="mono">Clarastock.com</span>
+            <h3 style="margin-top:10px;">Online, wherever you are</h3>
+            <p class="muted" style="margin-bottom:0;">
+              Shop, track orders, and manage your wallet from
+              <strong style="color:var(--ink);">clarastock.com</strong> or
+              through our app: same account, either way.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}

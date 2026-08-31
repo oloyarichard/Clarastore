@@ -1,0 +1,91 @@
+{% extends 'webapp/base.html' %}
+{% load static %}
+
+{% block title %}Account| Clarastock{% endblock %}
+
+{% block content %}
+<section class="tight">
+    <div class="container form-page">
+      <h1 style="font-size:1.8rem;">Account</h1>
+      <p class="muted" id="account-email" style="margin-bottom:32px;"></p>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="first-name">First name</label>
+          <input type="text" id="first-name">
+        </div>
+        <div class="field">
+          <label for="last-name">Last name</label>
+          <input type="text" id="last-name">
+        </div>
+      </div>
+      <div class="field">
+        <label for="phone">Phone</label>
+        <input type="tel" id="phone">
+      </div>
+      <div class="field">
+        <label for="district">District</label>
+        <select id="district"></select>
+      </div>
+
+      <button class="btn btn-gold" id="save-btn" style="width:100%;">Save changes</button>
+
+      <button class="btn btn-outline" id="logout-btn" style="width:100%;margin-top:16px;">Log out</button>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  requireAuth();
+  renderAuthNav();
+
+  try {
+    const [profile, districts] = await Promise.all([
+      apiFetch('/auth/profile/'),
+      apiFetch('/auth/districts/', { auth: false }),
+    ]);
+
+    document.getElementById('account-email').textContent = profile.email;
+    document.getElementById('first-name').value = profile.first_name || '';
+    document.getElementById('last-name').value = profile.last_name || '';
+    document.getElementById('phone').value = profile.phone || '';
+
+    const list = districts.results || districts;
+    const select = document.getElementById('district');
+    select.innerHTML = list.map(d =>
+      `<option value="${d.id}" ${d.id === profile.district ? 'selected' : ''}>${escapeHtml(d.name)}</option>`
+    ).join('');
+  } catch (e) {
+    showError(e);
+  }
+
+  document.getElementById('save-btn').addEventListener('click', saveProfile);
+  document.getElementById('logout-btn').addEventListener('click', logout);
+});
+
+async function saveProfile() {
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  try {
+    await apiFetch('/auth/profile/', {
+      method: 'PATCH',
+      body: {
+        first_name: document.getElementById('first-name').value.trim(),
+        last_name: document.getElementById('last-name').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        district: parseInt(document.getElementById('district').value, 10),
+      },
+    });
+    showToast('Profile updated');
+  } catch (e) {
+    showError(e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save changes';
+  }
+}
+</script>
+{% endblock %}

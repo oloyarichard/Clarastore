@@ -1,0 +1,140 @@
+{% extends 'webapp/base.html' %}
+{% load static %}
+
+{% block title %}Shop| Clarastock{% endblock %}
+{% block description %}Browse clothing available for delivery across Uganda.{% endblock %}
+
+{% block content %}
+<section class="tight">
+    <div class="container">
+      <h1 style="font-size:2rem;margin-bottom:24px;">Shop</h1>
+
+      <div class="field" style="max-width:420px;margin-bottom:32px;">
+        <input type="text" id="search-input" placeholder="Search clothes...">
+      </div>
+
+      <div id="products-loading" class="spinner-center"><span class="spinner"></span></div>
+      <div id="products-empty" class="empty-state" style="display:none;">
+        <div class="empty-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></div>
+        <p>No products found</p>
+      </div>
+      <div id="products-grid" class="product-grid"></div>
+      <div id="load-more-row" style="display:none;text-align:center;margin-top:32px;">
+        <button id="load-more-btn" class="btn btn-outline" type="button">Load more</button>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let nextPageUrl = null;   // relative path for the next page, or null if none
+let currentSearch = '';   // so "Load more" continues the same filtered search
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderAuthNav();
+  loadProducts();
+
+  let searchTimer;
+  document.getElementById('search-input').addEventListener('input', (e) => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => loadProducts(e.target.value), 350);
+  });
+
+  document.getElementById('load-more-btn').addEventListener('click', loadMore);
+});
+
+// Django's pagination `next` field is a full absolute URL (e.g.
+// http://host/api/products/?page=2), but apiFetch expects a path
+// relative to API_BASE_URL (which itself is just "/api") — this
+// converts one into the other so the same helper can be reused
+// for every page, not just the first.
+function pathFromFullUrl(fullUrl) {
+  const url = new URL(fullUrl);
+  let path = url.pathname + url.search;
+  if (path.startsWith('/api')) path = path.slice(4);
+  return path;
+}
+
+async function loadProducts(search) {
+  currentSearch = search || '';
+  const loading = document.getElementById('products-loading');
+  const empty = document.getElementById('products-empty');
+  const grid = document.getElementById('products-grid');
+  loading.style.display = 'flex';
+  empty.style.display = 'none';
+  document.getElementById('load-more-row').style.display = 'none';
+  grid.innerHTML = '';
+  nextPageUrl = null;
+
+  try {
+    const query = currentSearch ? `?search=${encodeURIComponent(currentSearch)}` : '';
+    const response = await apiFetch('/products/' + query, { auth: false });
+    renderPage(response, /* append= */ false);
+  } catch (e) {
+    showError(e);
+  } finally {
+    loading.style.display = 'none';
+  }
+}
+
+async function loadMore() {
+  if (!nextPageUrl) return;
+  const btn = document.getElementById('load-more-btn');
+  btn.disabled = true;
+  btn.textContent = 'Loading...';
+
+  try {
+    const response = await apiFetch(nextPageUrl, { auth: false });
+    renderPage(response, /* append= */ true);
+  } catch (e) {
+    showError(e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Load more';
+  }
+}
+
+function renderPage(response, append) {
+  const empty = document.getElementById('products-empty');
+  const grid = document.getElementById('products-grid');
+  const loadMoreRow = document.getElementById('load-more-row');
+
+  // A plain (non-paginated) response falls back to treating the whole
+  // thing as one page with no "next" — keeps this working even if
+  // pagination is ever turned off for this endpoint.
+  const list = response.results !== undefined ? response.results : response;
+  nextPageUrl = response.next ? pathFromFullUrl(response.next) : null;
+
+  if (!append && !list.length) {
+    empty.style.display = 'block';
+    loadMoreRow.style.display = 'none';
+    return;
+  }
+
+  const html = list.map(renderProductCard).join('');
+  grid.innerHTML = append ? grid.innerHTML + html : html;
+  loadMoreRow.style.display = nextPageUrl ? 'block' : 'none';
+}
+
+function renderProductCard(p) {
+  const thumb = p.image
+    ? `<img src="${escapeHtml(p.image)}" alt="${escapeHtml(p.name)}">`
+    : productPlaceholderIcon();
+  // Real stock-driven signal, not a fabricated urgency badge: only
+  // shown when the actual count is low and the item is still buyable.
+  const lowStock = p.is_in_stock && p.stock <= 3
+    ? `<span class="badge-low-stock">Only ${p.stock} left</span>` : '';
+  return `
+    <a class="product-card" href="/product/${p.id}/">
+      <div class="product-thumb">${lowStock}${thumb}</div>
+      <div class="product-info">
+        <div class="name">${escapeHtml(p.name)}</div>
+        <div class="price">${formatUGX(p.price)}</div>
+        ${!p.is_in_stock ? '<div class="oos">Out of stock</div>' : ''}
+      </div>
+    </a>
+  `;
+}
+</script>
+{% endblock %}

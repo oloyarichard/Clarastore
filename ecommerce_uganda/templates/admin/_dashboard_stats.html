@@ -1,0 +1,9 @@
+{% load i18n %}
+<div class="cs-stats-grid">
+  {% for stat in stats %}
+    <div class="cs-stat-card{% if stat.alert %} cs-alert{% endif %}{% if stat.accent %} cs-accent{% endif %}">
+      <div class="cs-stat-label">{{ stat.label }}</div>
+      <div class="cs-stat-value">{{ stat.value }}</div>
+    </div>
+  {% endfor %}
+</div>

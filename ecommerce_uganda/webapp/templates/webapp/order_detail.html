@@ -1,0 +1,176 @@
+{% extends 'webapp/base.html' %}
+{% load static %}
+
+{% block title %}Order| Clarastock{% endblock %}
+
+{% block content %}
+<script>window.ORDER_ID = {{ pk }};</script>
+<section class="tight">
+    <div class="container" style="max-width:640px;">
+      <div id="loading" class="spinner-center"><span class="spinner"></span></div>
+
+      <div id="order-content" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+          <h1 id="order-title" style="font-size:1.6rem;margin:0;"></h1>
+          <span id="status-badge"></span>
+        </div>
+        <p id="order-date" class="muted" style="margin-bottom:24px;"></p>
+
+        <div id="order-timeline-slot"></div>
+        <div class="card" style="margin-bottom:24px;">
+          <div id="info-rows"></div>
+        </div>
+
+        <h3>Items</h3>
+        <div id="order-items" style="margin-bottom:16px;"></div>
+        <div class="summary-row total">
+          <span>Total</span>
+          <span id="order-total"></span>
+        </div>
+
+        <div id="actions" style="margin-top:32px;"></div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block modals %}
+<div class="modal-backdrop" id="dispatch-modal">
+  <div class="modal">
+    <h3>Dispatch via taxi/bus</h3>
+    <div class="field">
+      <label for="transport-ref">Transport reference</label>
+      <textarea id="transport-ref" rows="2" placeholder="Route, taxi/bus, driver contact"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" id="dispatch-cancel">Cancel</button>
+      <button class="btn btn-gold" id="dispatch-confirm">Confirm dispatch</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let order = null;
+let currentUserId = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  requireAuth();
+  renderAuthNav();
+
+  const id = window.ORDER_ID;
+  currentUserId = parseInt(getCookie('user_id'), 10);
+
+  await loadOrder(id);
+
+  document.getElementById('dispatch-cancel').addEventListener('click', () => {
+    document.getElementById('dispatch-modal').classList.remove('open');
+  });
+  document.getElementById('dispatch-confirm').addEventListener('click', async () => {
+    const ref = document.getElementById('transport-ref').value.trim();
+    if (!ref) return;
+    document.getElementById('dispatch-modal').classList.remove('open');
+    await updateStatus(id, 'dispatched', ref);
+  });
+});
+
+async function loadOrder(id) {
+  try {
+    order = await apiFetch(`/orders/${id}/`);
+    renderOrder(id);
+  } catch (e) {
+    showError(e);
+  } finally {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('order-content').style.display = 'block';
+  }
+}
+
+function renderOrder(id) {
+  document.getElementById('order-title').textContent = `Order #${order.id}`;
+  document.getElementById('status-badge').innerHTML = statusBadgeHtml(order.status);
+  document.getElementById('order-date').textContent = 'Placed ' + formatDate(order.created_at);
+  document.getElementById('order-timeline-slot').innerHTML = orderTimelineHtml(order.status);
+
+  const rows = [];
+  rows.push(['Delivery district', order.district_name || '-']);
+  rows.push(['Hub', order.hub_name || '-']);
+  if (order.assigned_agent_name) rows.push(['Agent', order.assigned_agent_name]);
+  if (order.transport_reference) rows.push(['Transport', order.transport_reference]);
+  document.getElementById('info-rows').innerHTML = rows.map(([label, value]) => `
+    <div style="display:flex;padding:4px 0;">
+      <div style="width:140px;color:var(--muted);">${escapeHtml(label)}</div>
+      <div style="font-weight:500;">${escapeHtml(value)}</div>
+    </div>
+  `).join('');
+
+  document.getElementById('order-items').innerHTML = order.items.map(item => `
+    <div class="summary-row">
+      <span>${escapeHtml(item.product_name)} &times;${item.quantity}</span>
+      <span>${formatUGX(item.subtotal)}</span>
+    </div>
+  `).join('');
+  document.getElementById('order-total').textContent = formatUGX(order.total_amount);
+
+  renderActions(id);
+}
+
+function renderActions(id) {
+  const actionsEl = document.getElementById('actions');
+  const role = getRole();
+  // Deliberately checks the actual order relationship, not the
+  // account's overall role label — an agent buying something for
+  // themselves is still the customer on that specific order, and
+  // needs to see the same confirm/flag buttons a customer account
+  // would, regardless of what their account is generally labeled.
+  const isCustomer = order.customer === currentUserId;
+  const isAssignedAgent = role === 'agent' && order.assigned_agent === currentUserId;
+  const canConfirmOrFlag = ['dispatched', 'picked_up', 'awaiting_confirmation'].includes(order.status);
+  // A hub-direct order's district and hub are the same district; a
+  // sub-district order forwards to a different hub.
+  const isHubDirect = order.district_name && order.district_name === order.hub_name;
+
+  let html = '';
+
+  if (isCustomer && canConfirmOrFlag) {
+    html += `
+      <h3>Has your order arrived?</h3>
+      <button class="btn btn-gold" id="confirm-btn" style="width:100%;margin-bottom:10px;">Confirm received</button>
+      <button class="btn btn-outline" id="not-received-btn" style="width:100%;color:var(--danger);border-color:var(--danger);">Not received</button>
+    `;
+  }
+
+  if (isAssignedAgent && order.status === 'assigned') {
+    html += `<button class="btn btn-gold" id="pickup-btn" style="width:100%;">Mark picked up</button>`;
+  }
+  if (isAssignedAgent && order.status === 'picked_up' && !isHubDirect) {
+    html += `<button class="btn btn-gold" id="dispatch-btn" style="width:100%;">Dispatch via taxi/bus</button>`;
+  }
+  if (isAssignedAgent && order.status === 'picked_up' && isHubDirect) {
+    html += `<button class="btn btn-gold" id="deliver-btn" style="width:100%;">Mark delivered to customer</button>`;
+  }
+
+  actionsEl.innerHTML = html;
+
+  const bind = (id, fn) => { const el = document.getElementById(id); if (el) el.addEventListener('click', fn); };
+  bind('confirm-btn', () => updateStatus(order.id, 'delivered'));
+  bind('not-received-btn', () => updateStatus(order.id, 'flagged'));
+  bind('pickup-btn', () => updateStatus(order.id, 'picked_up'));
+  bind('dispatch-btn', () => document.getElementById('dispatch-modal').classList.add('open'));
+  bind('deliver-btn', () => updateStatus(order.id, 'awaiting_confirmation'));
+}
+
+async function updateStatus(id, status, transportReference) {
+  try {
+    const body = { status };
+    if (transportReference) body.transport_reference = transportReference;
+    await apiFetch(`/orders/${id}/status/`, { method: 'PATCH', body });
+    showToast('Order updated');
+    await loadOrder(id);
+  } catch (e) {
+    showError(e);
+  }
+}
+</script>
+{% endblock %}

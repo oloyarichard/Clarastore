@@ -1,0 +1,111 @@
+{% extends 'webapp/base.html' %}
+{% load static %}
+
+{% block title %}Download| Clarastock{% endblock %}
+{% block description %}Get Clarastock on Android, iOS, or use it directly in your browser.{% endblock %}
+
+{% block content %}
+<section class="hero" style="padding-bottom:32px;">
+    <div class="container">
+      <span class="hero-eyebrow mono">Get started</span>
+      <h1 style="max-width:18ch;">However you shop, we've got a way in</h1>
+      <p class="hero-sub">Native apps for Android and iOS, or open the web version
+      right now: same account, same wallet, same orders, wherever you use it.</p>
+    </div>
+  </section>
+
+  <section class="tight">
+    <div class="container">
+      <div class="download-grid">
+
+        <div class="download-card">
+          <span class="mono">Android</span>
+          <h3 style="margin-top:8px;">Google Play</h3>
+          <p class="muted">The full app experience: order tracking, wallet top-up,
+          and delivery confirmation built for daily use.</p>
+          <!-- Replace with a real href once your Play Store listing is live -->
+          <button type="button" class="store-badge store-btn" data-store="Google Play">
+            <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+              <path fill="#00D9FF" d="M3.6 2.4c-.4.3-.6.8-.6 1.4v16.4c0 .6.2 1.1.6 1.4l.1.1L13 12.4v-.2L3.7 2.3l-.1.1z"/>
+              <path fill="#FFD900" d="M16 15.4l-3-3v-.4l3-3 .1.1 3.6 2c1 .6 1 1.5 0 2.1l-3.6 2-.1.2z"/>
+              <path fill="#FF3A44" d="M16.1 15.3L13 12.2 3.6 21.6c.4.4 1 .4 1.7.1l10.8-6.4"/>
+              <path fill="#00EE76" d="M16.1 8.7L5.3 2.3c-.7-.4-1.3-.3-1.7.1L13 12l3.1-3.3z"/>
+            </svg>
+            <span class="store-badge-text">
+              <small>GET IT ON</small>
+              <strong>Google Play</strong>
+            </span>
+          </button>
+        </div>
+
+        <div class="download-card">
+          <span class="mono">iOS</span>
+          <h3 style="margin-top:8px;">App Store</h3>
+          <p class="muted">The same app, built for iPhone: sign in once and
+          your cart, wallet, and orders carry over from any device.</p>
+          <!-- Replace with a real href once your App Store listing is live -->
+          <button type="button" class="store-badge store-btn" data-store="the App Store">
+            <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true" fill="#fff">
+              <path d="M16.365 1.43c0 1.14-.462 2.16-1.213 2.914-.865.884-2.213 1.567-3.352 1.478-.15-1.104.462-2.264 1.152-2.98.75-.813 2.06-1.428 3.413-1.412zM20.6 17.024c-.437 1.01-.965 1.94-1.61 2.813-.892 1.213-1.783 2.407-3.2 2.428-1.394.025-1.844-.826-3.437-.826-1.594 0-2.096.802-3.412.85-1.365.05-2.406-1.313-3.302-2.522-1.83-2.485-3.226-7.017-1.35-10.083.93-1.523 2.59-2.487 4.393-2.512 1.34-.025 2.61.9 3.437.9.822 0 2.37-1.115 3.994-.95.68.028 2.59.276 3.816 2.078-.098.062-2.28 1.33-2.256 3.973.028 3.155 2.76 4.208 2.79 4.222-.023.075-.44 1.508-1.463 3.63z"/>
+            </svg>
+            <span class="store-badge-text">
+              <small>DOWNLOAD ON THE</small>
+              <strong>App Store</strong>
+            </span>
+          </button>
+        </div>
+
+      </div>
+
+      <div class="download-card" style="margin-top:20px;">
+        <span class="mono">No install needed</span>
+        <h3 style="margin-top:8px;">Continue in your browser</h3>
+        <p class="muted">Prefer not to install anything? Use Clarastock directly
+        from any browser at <strong style="color:var(--ink);">clarastock.com</strong>,
+        full cart, checkout, and order tracking, nothing to download.</p>
+        <a href="{% url 'webapp:shop' %}" class="btn btn-outline">Start shopping &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section-border-top">
+    <div class="container">
+      <div class="section-head">
+        <span class="mono">Before you start</span>
+        <h2>What you'll need</h2>
+      </div>
+      <div class="grid grid-3">
+        <div class="card">
+          <span class="mono">Account</span>
+          <h3>Email &amp; password</h3>
+          <p class="muted">Browsing is open to everyone: you only need an
+          account when you're ready to check out.</p>
+        </div>
+        <div class="card">
+          <span class="mono">Delivery</span>
+          <h3>Your district</h3>
+          <p class="muted">We use this to route your order through the right
+          hub, whether that's direct delivery or a taxi/bus connection.</p>
+        </div>
+        <div class="card">
+          <span class="mono">Payment</span>
+          <h3>MTN MoMo or Airtel Money</h3>
+          <p class="muted">Top up your in-app wallet with either provider,
+          or top up in person through a local agent.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.store-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      showToast(`Coming soon to ${btn.dataset.store}: check back shortly.`);
+    });
+  });
+});
+</script>
+{% endblock %}

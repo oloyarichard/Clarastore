@@ -1,0 +1,257 @@
+{% extends 'webapp/base.html' %}
+{% load static %}
+
+{% block title %}Wallet| Clarastock{% endblock %}
+
+{% block content %}
+<section class="tight">
+    <div class="container">
+      <h1 style="font-size:1.8rem;margin-bottom:24px;">Wallet</h1>
+
+      <div class="wallet-layout">
+        <div class="wallet-side">
+          <div id="balance-card" class="balance-card">
+            <div class="label">Balance</div>
+            <div class="amount" id="balance-amount">-</div>
+          </div>
+
+          <button id="topup-open-btn" class="btn btn-outline" style="width:100%;margin-top:16px;">
+            Top up (MTN MoMo / Airtel Money)
+          </button>
+
+          <div id="commissions-section" style="display:none;margin-top:40px;">
+            <h3>Earnings</h3>
+            <div id="commissions-total" class="summary-row total" style="margin-bottom:12px;"></div>
+            <div id="commissions-list"></div>
+          </div>
+        </div>
+
+        <div class="wallet-main">
+          <h3 style="margin-top:0;">Recent activity</h3>
+          <div id="txn-loading" class="spinner-center"><span class="spinner"></span></div>
+          <div id="txn-empty" class="empty-state" style="display:none;">
+            <div class="empty-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5.5" width="19" height="13" rx="2.5"/><path d="M2.5 10h19"/></svg></div>
+            <p>No activity yet</p>
+          </div>
+          <div id="txn-list"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block modals %}
+<div class="modal-backdrop" id="topup-modal">
+  <div class="modal">
+    <h3 id="topup-title">Top up wallet</h3>
+
+    <div id="topup-form">
+      <div class="field">
+        <label for="topup-amount">Amount (UGX)</label>
+        <input type="number" id="topup-amount" min="1">
+      </div>
+      <div class="field">
+        <label for="topup-phone">Phone number</label>
+        <input type="tel" id="topup-phone" placeholder="07XXXXXXXX">
+      </div>
+      <div class="field">
+        <label>Provider</label>
+        <div class="chip-group">
+          <div class="chip selected" data-provider="">Auto-detect</div>
+          <div class="chip" data-provider="mtn_momo">MTN MoMo</div>
+          <div class="chip" data-provider="airtel_money">Airtel</div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="topup-cancel">Cancel</button>
+        <button class="btn btn-gold" id="topup-submit">Send request</button>
+      </div>
+    </div>
+
+    <div id="topup-waiting" style="display:none;text-align:center;padding:20px 0;">
+      <div class="spinner" style="margin-bottom:16px;"></div>
+      <p>Check your phone and approve the payment prompt.</p>
+      <button class="btn btn-outline" id="topup-close-waiting" style="margin-top:12px;">Close</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedProvider = '';
+let pollTimer = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  requireAuth();
+  renderAuthNav();
+
+  if (isAgent()) {
+    document.getElementById('commissions-section').style.display = 'block';
+    loadCommissions();
+  }
+
+  loadWallet();
+  loadTransactions();
+
+  document.getElementById('topup-open-btn').addEventListener('click', openTopupModal);
+  document.getElementById('topup-cancel').addEventListener('click', closeTopupModal);
+  document.getElementById('topup-close-waiting').addEventListener('click', closeTopupModal);
+  document.getElementById('topup-submit').addEventListener('click', submitTopup);
+
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      selectedProvider = chip.dataset.provider;
+    });
+  });
+});
+
+async function loadWallet() {
+  try {
+    const wallet = await apiFetch('/wallet/');
+    document.getElementById('balance-amount').textContent = formatUGX(wallet.balance);
+
+    if (isAgent()) {
+      const minFloat = 100000; // must match settings.AGENT_MINIMUM_FLOAT
+      const card = document.getElementById('balance-card');
+      if (wallet.balance < minFloat) {
+        card.classList.add('warning');
+        document.getElementById('balance-amount').insertAdjacentHTML('afterend',
+          `<div class="muted" style="color:var(--danger);margin-top:8px;font-size:0.85rem;">
+            Below the required minimum of ${formatUGX(minFloat)}. Top up to keep crediting customers.
+          </div>`);
+      }
+    }
+  } catch (e) {
+    showError(e);
+  }
+}
+
+async function loadTransactions() {
+  try {
+    const txns = await apiFetch('/wallet/transactions/');
+    const list = txns.results || txns;
+    document.getElementById('txn-loading').style.display = 'none';
+
+    if (!list.length) {
+      document.getElementById('txn-empty').style.display = 'block';
+      return;
+    }
+
+    const labels = {
+      topup_gateway: 'Wallet top-up',
+      topup_via_agent_credit: 'Top-up from agent',
+      topup_via_agent_debit: 'Top-up given to customer',
+      payment: 'Order payment',
+      commission: 'Delivery commission',
+      commission_reversal: 'Commission reversed (refund)',
+      refund: 'Refund',
+      adjustment: 'Adjustment',
+    };
+
+    document.getElementById('txn-list').innerHTML = list.map(t => {
+      const positive = Number(t.amount) >= 0;
+      return `
+        <div class="activity-row">
+          <div class="activity-left">
+            <div class="activity-icon" style="color:${positive ? '#20a879' : '#df5b68'};">
+              ${positive ? '&darr;' : '&uarr;'}
+            </div>
+            <div>
+              <div>${labels[t.type] || t.type}</div>
+              <div class="muted" style="font-size:0.8rem;">${formatDate(t.created_at)}</div>
+            </div>
+          </div>
+          <div class="activity-amount ${positive ? 'positive' : 'negative'}">
+            ${positive ? '+' : ''}${formatUGX(t.amount)}
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    document.getElementById('txn-loading').style.display = 'none';
+    showError(e);
+  }
+}
+
+async function loadCommissions() {
+  try {
+    const commissions = await apiFetch('/wallet/agent/commissions/');
+    const list = commissions.results || commissions;
+    const total = list.reduce((sum, c) => sum + Number(c.commission_amount), 0);
+    document.getElementById('commissions-total').innerHTML = `<span>Total earned</span><span>${formatUGX(total)}</span>`;
+
+    document.getElementById('commissions-list').innerHTML = list.length ? list.map(c => `
+      <div class="activity-row">
+        <div>
+          <div>Order #${c.order_id} - ${escapeHtml(c.product_name)}</div>
+          <div class="muted" style="font-size:0.8rem;">${formatDate(c.created_at)}</div>
+        </div>
+        <div class="activity-amount positive">+${formatUGX(c.commission_amount)}</div>
+      </div>
+    `).join('') : '<p class="muted">No commissions earned yet.</p>';
+  } catch (e) {
+    showError(e);
+  }
+}
+
+function openTopupModal() {
+  document.getElementById('topup-modal').classList.add('open');
+  document.getElementById('topup-form').style.display = 'block';
+  document.getElementById('topup-waiting').style.display = 'none';
+}
+
+function closeTopupModal() {
+  document.getElementById('topup-modal').classList.remove('open');
+  if (pollTimer) clearInterval(pollTimer);
+}
+
+async function submitTopup() {
+  const amount = parseFloat(document.getElementById('topup-amount').value);
+  const phone = document.getElementById('topup-phone').value.trim();
+  if (!amount || amount <= 0 || !phone) {
+    showToast('Enter an amount and phone number.', true);
+    return;
+  }
+
+  const btn = document.getElementById('topup-submit');
+  btn.disabled = true;
+  try {
+    const body = { amount, phone_number: phone };
+    if (selectedProvider) body.provider = selectedProvider;
+    const request = await apiFetch('/wallet/topup/', { method: 'POST', body });
+
+    document.getElementById('topup-form').style.display = 'none';
+    document.getElementById('topup-waiting').style.display = 'block';
+    pollTopupStatus(request.id);
+  } catch (e) {
+    showError(e);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function pollTopupStatus(requestId) {
+  let attempts = 0;
+  pollTimer = setInterval(async () => {
+    attempts++;
+    try {
+      const status = await apiFetch(`/wallet/topup/${requestId}/status/`);
+      if (status.status !== 'pending' || attempts >= 30) {
+        clearInterval(pollTimer);
+        if (status.status === 'successful') {
+          showToast('Top-up successful!');
+          closeTopupModal();
+          loadWallet();
+          loadTransactions();
+        } else if (status.status === 'failed') {
+          showToast('Top-up failed or was declined.', true);
+        }
+      }
+    } catch (e) { /* keep trying until the attempt cap */ }
+  }, 4000);
+}
+</script>
+{% endblock %}

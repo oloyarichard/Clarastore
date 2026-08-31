@@ -1,0 +1,186 @@
+{% extends 'webapp/base.html' %}
+{% load static %}
+
+{% block title %}Cart| Clarastock{% endblock %}
+
+{% block content %}
+<section class="tight">
+    <div class="container" style="max-width:760px;">
+      <h1 style="font-size:2rem;margin-bottom:24px;">Your cart</h1>
+
+      <div id="loading" class="spinner-center"><span class="spinner"></span></div>
+      <div id="empty" class="empty-state" style="display:none;">
+        <div class="empty-icon empty-icon-cart">
+          <svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 8h12l-1 12H7L6 8z"/>
+            <path d="M9 8V6a3 3 0 0 1 6 0v2"/>
+          </svg>
+        </div>
+        <p>Your cart is empty</p>
+        <a href="{% url 'webapp:shop' %}">Continue shopping &rarr;</a>
+      </div>
+
+      <div id="cart-content" style="display:none;">
+        <table class="cart-table">
+          <tbody id="cart-items"></tbody>
+        </table>
+
+        <div style="margin-top:24px;max-width:320px;margin-left:auto;">
+          <div class="summary-row total">
+            <span>Total</span>
+            <span id="cart-total"></span>
+          </div>
+          <button id="checkout-btn" class="btn btn-gold" style="width:100%;margin-top:16px;">Checkout</button>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Cart state is kept in memory once loaded, and every quantity/remove
+// action updates it (and the on-screen totals + nav badge) immediately,
+// then syncs to the server in the background. This is what makes the
+// cart feel instant instead of flashing a spinner and re-fetching on
+// every single click. If the background sync fails, we resync from the
+// server rather than leaving the UI showing something that didn't stick.
+let cart = { items: [], total: 0, count: 0 };
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderAuthNav();
+  loadCart();
+  document.getElementById('checkout-btn').addEventListener('click', () => {
+    window.location.href = isLoggedIn() ? '{% url "webapp:checkout" %}' : '{% url "webapp:login" %}?next=' + encodeURIComponent('{% url "webapp:checkout" %}');
+  });
+});
+
+async function loadCart() {
+  const loading = document.getElementById('loading');
+  const empty = document.getElementById('empty');
+  const content = document.getElementById('cart-content');
+  loading.style.display = 'flex';
+  empty.style.display = 'none';
+  content.style.display = 'none';
+
+  try {
+    cart = await apiFetch('/cart/');
+    loading.style.display = 'none';
+    renderCart();
+  } catch (e) {
+    loading.style.display = 'none';
+    showError(e);
+  }
+}
+
+function recomputeTotals() {
+  cart.total = cart.items.reduce((sum, item) => sum + Number(item.subtotal), 0);
+  cart.count = cart.items.length;
+}
+
+function renderCart() {
+  const empty = document.getElementById('empty');
+  const content = document.getElementById('cart-content');
+
+  if (!cart.items.length) {
+    empty.style.display = 'block';
+    content.style.display = 'none';
+    updateCartBadge(0);
+    return;
+  }
+
+  empty.style.display = 'none';
+  content.style.display = 'block';
+  document.getElementById('cart-items').innerHTML = cart.items.map(renderCartRow).join('');
+  document.getElementById('cart-total').textContent = formatUGX(cart.total);
+  updateCartBadge(cart.count);
+
+  document.querySelectorAll('[data-action="minus"]').forEach(b => b.addEventListener('click', () => changeQty(b.dataset.id, -1)));
+  document.querySelectorAll('[data-action="plus"]').forEach(b => b.addEventListener('click', () => changeQty(b.dataset.id, 1)));
+  document.querySelectorAll('[data-action="remove"]').forEach(b => b.addEventListener('click', () => removeItem(b.dataset.id)));
+}
+
+function renderCartRow(item) {
+  const thumb = item.product.image
+    ? `<img src="${escapeHtml(item.product.image)}" alt="">`
+    : productPlaceholderIcon();
+  const isNegotiated = item.negotiated_price !== null && item.negotiated_price !== undefined;
+  const priceLine = isNegotiated
+    ? `<span class="negotiated-badge">Negotiated</span> <s class="muted">${formatUGX(item.product.price)}</s> <strong>${formatUGX(item.unit_price)}</strong>`
+    : formatUGX(item.product.price);
+  const sizeLine = item.size ? `<div class="muted" style="font-size:0.8rem;">Size: ${escapeHtml(item.size)}</div>` : '';
+  return `
+    <tr data-item-id="${item.id}">
+      <td><div class="cart-thumb">${thumb}</div></td>
+      <td>
+        <div style="font-weight:600;">${escapeHtml(item.product.name)}</div>
+        ${sizeLine}
+        <div class="muted" style="font-size:0.85rem;">${priceLine}</div>
+      </td>
+      <td>
+        <div class="qty-control">
+          <button type="button" data-action="minus" data-id="${item.id}">&minus;</button>
+          <span>${item.quantity}</span>
+          <button type="button" data-action="plus" data-id="${item.id}">+</button>
+        </div>
+      </td>
+      <td style="font-weight:600;">${formatUGX(item.subtotal)}</td>
+      <td>
+        <button type="button" class="remove-btn" data-action="remove" data-id="${item.id}" aria-label="Remove item">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 7h16"/>
+            <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
+            <path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/>
+            <path d="M10 11v6M14 11v6"/>
+          </svg>
+        </button>
+      </td>
+    </tr>
+  `;
+}
+
+function changeQty(itemId, delta) {
+  const item = cart.items.find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  const newQty = item.quantity + delta;
+  if (newQty < 1) { return removeItem(itemId); }
+
+  // Update instantly, sync in the background.
+  const previousQty = item.quantity;
+  // Use the actual charged price (negotiated, if this item has one) —
+  // not the catalog price, which would silently show the wrong subtotal
+  // for any negotiated item the moment its quantity changes.
+  const unitPrice = Number(item.unit_price ?? item.product.price);
+  item.quantity = newQty;
+  item.subtotal = (unitPrice * newQty).toFixed(2);
+  recomputeTotals();
+  renderCart();
+
+  apiFetch('/cart/', { method: 'PATCH', body: { item_id: itemId, quantity: newQty } })
+    .catch(e => {
+      // Roll back to the last known-good state and tell the person why.
+      item.quantity = previousQty;
+      item.subtotal = (unitPrice * previousQty).toFixed(2);
+      recomputeTotals();
+      renderCart();
+      showError(e);
+    });
+}
+
+function removeItem(itemId) {
+  const index = cart.items.findIndex(i => String(i.id) === String(itemId));
+  if (index === -1) return;
+  const [removed] = cart.items.splice(index, 1);
+  recomputeTotals();
+  renderCart();
+
+  apiFetch('/cart/', { method: 'DELETE', body: { item_id: itemId } })
+    .catch(e => {
+      // Put it back and resync from the server to be safe, rather than
+      // guess at where it should be re-inserted.
+      showError(e);
+      loadCart();
+    });
+}
+</script>
+{% endblock %}

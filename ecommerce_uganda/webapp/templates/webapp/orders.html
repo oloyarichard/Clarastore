@@ -1,0 +1,59 @@
+{% extends 'webapp/base.html' %}
+{% load static %}
+
+{% block title %}Orders| Clarastock{% endblock %}
+
+{% block content %}
+<section class="tight">
+    <div class="container" style="max-width:760px;">
+      <h1 id="page-title" style="font-size:1.8rem;margin-bottom:24px;">Orders</h1>
+
+      <div id="loading" class="spinner-center"><span class="spinner"></span></div>
+      <div id="empty" class="empty-state" style="display:none;">
+        <div class="empty-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>
+        <p>No orders yet</p>
+        <a href="{% url 'webapp:shop' %}">Start shopping &rarr;</a>
+      </div>
+      <div id="order-list"></div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  requireAuth();
+  renderAuthNav();
+  if (isAgent()) document.getElementById('page-title').textContent = 'My deliveries';
+
+  try {
+    const orders = await apiFetch('/orders/');
+    const list = orders.results || orders;
+    document.getElementById('loading').style.display = 'none';
+
+    if (!list.length) {
+      document.getElementById('empty').style.display = 'block';
+      return;
+    }
+
+    document.getElementById('order-list').innerHTML = list.map(renderOrderRow).join('');
+  } catch (e) {
+    document.getElementById('loading').style.display = 'none';
+    showError(e);
+  }
+});
+
+function renderOrderRow(order) {
+  const itemCount = order.items_count !== undefined ? order.items_count : (order.items ? order.items.length : 0);
+  return `
+    <a class="order-row" href="/orders/${order.id}/">
+      <div>
+        <div class="order-id">Order #${order.id}</div>
+        <div class="order-meta">${itemCount} item(s) &middot; ${formatUGX(order.total_amount)} &middot; ${formatDate(order.created_at)}</div>
+      </div>
+      ${statusBadgeHtml(order.status)}
+    </a>
+  `;
+}
+</script>
+{% endblock %}

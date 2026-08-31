@@ -1,0 +1,118 @@
+{% extends 'webapp/base.html' %}
+{% load static %}
+
+{% block title %}Sign up| Clarastock{% endblock %}
+
+{% block content %}
+<section class="tight">
+    <div class="container form-page blob-surface">
+      <h1 style="font-size:1.8rem;">Create your account</h1>
+      <p class="muted" style="margin-bottom:32px;">Just a few details to get started</p>
+
+      <form id="signup-form">
+        <div class="field-row">
+          <div class="field">
+            <label for="first-name">First name</label>
+            <input type="text" id="first-name" required>
+          </div>
+          <div class="field">
+            <label for="last-name">Last name</label>
+            <input type="text" id="last-name" required>
+          </div>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" required>
+        </div>
+        <div class="field">
+          <label for="phone">Phone number</label>
+          <input type="tel" id="phone" placeholder="07XXXXXXXX" required>
+        </div>
+        <div class="field">
+          <label for="district">Delivery district</label>
+          <select id="district" required>
+            <option value="">Loading districts...</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" minlength="8" required>
+        </div>
+        <div class="field">
+          <label for="password-confirm">Confirm password</label>
+          <input type="password" id="password-confirm" minlength="8" required>
+          <div class="field-error" id="password-error">Passwords do not match.</div>
+        </div>
+        <button type="submit" class="btn btn-gold" id="submit-btn" style="width:100%;">Create account</button>
+      </form>
+
+      <p style="margin-top:20px;text-align:center;" class="muted">
+        Already have an account? <a href="{% url 'webapp:login' %}" id="login-link">Log in</a>
+      </p>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  if (isLoggedIn()) {
+    window.location.href = isAgent() ? '{% url "webapp:agent_dashboard" %}' : '{% url "webapp:shop" %}';
+    return;
+  }
+
+  // Same 'next' destination login.html carries: if someone arrived here
+  // from a checkout redirect, keep that link's destination too, so
+  // "already have an account? log in" doesn't lose where they were headed.
+  const next = getQueryParam('next');
+  if (next) {
+    document.getElementById('login-link').href = '{% url "webapp:login" %}?next=' + encodeURIComponent(next);
+  }
+
+  try {
+    const districts = await apiFetch('/auth/districts/', { auth: false });
+    const list = districts.results || districts;
+    const select = document.getElementById('district');
+    select.innerHTML = list.map(d =>
+      `<option value="${d.id}">${escapeHtml(d.name)}${d.type === 'hub' ? ' (Hub)' : ''}</option>`
+    ).join('');
+  } catch (e) {
+    showError(e);
+  }
+
+  document.getElementById('signup-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const password = document.getElementById('password').value;
+    const confirm = document.getElementById('password-confirm').value;
+    const errorEl = document.getElementById('password-error');
+
+    if (password !== confirm) {
+      errorEl.style.display = 'block';
+      return;
+    }
+    errorEl.style.display = 'none';
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+    btn.textContent = 'Creating account...';
+
+    try {
+      const profile = await register({
+        email: document.getElementById('email').value.trim(),
+        password: password,
+        password_confirm: confirm,
+        first_name: document.getElementById('first-name').value.trim(),
+        last_name: document.getElementById('last-name').value.trim(),
+        phone: document.getElementById('phone').value.trim(),
+        district: parseInt(document.getElementById('district').value, 10),
+      });
+      window.location.href = next ? decodeURIComponent(next) : (profile.role === 'agent' ? '{% url "webapp:agent_dashboard" %}' : '{% url "webapp:shop" %}');
+    } catch (e) {
+      showError(e);
+      btn.disabled = false;
+      btn.textContent = 'Create account';
+    }
+  });
+});
+</script>
+{% endblock %}

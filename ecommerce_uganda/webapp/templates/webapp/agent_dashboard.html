@@ -1,0 +1,102 @@
+{% extends 'webapp/base.html' %}
+{% load static %}
+
+{% block title %}Dashboard| Clarastock{% endblock %}
+
+{% block content %}
+<section class="tight">
+    <div class="container">
+      <h1 id="greeting" style="font-size:1.8rem;margin-bottom:24px;">Hi</h1>
+
+      <div class="wallet-layout">
+        <div class="wallet-side">
+          <div id="balance-card" class="balance-card">
+            <div class="label">Your float</div>
+            <div class="amount" id="float-amount">-</div>
+            <div id="float-warning" class="muted" style="display:none;color:var(--danger);margin-top:8px;font-size:0.85rem;"></div>
+          </div>
+
+          <div class="grid grid-2" style="margin-top:20px;">
+            <a href="{% url 'webapp:agent_topup_customer' %}" class="action-card">
+              <div class="icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.5 3-6 7-6s7 2.5 7 6"/></svg></div>
+              <div class="title">Top up a customer</div>
+            </a>
+            <a href="{% url 'webapp:wallet' %}" class="action-card">
+              <div class="icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M9.5 15.5c0 1 .9 1.5 2.5 1.5s2.5-.7 2.5-1.7-1-1.4-2.5-1.8-2.5-.8-2.5-1.8S10.9 10 12.5 10s2.5.5 2.5 1.5"/><path d="M12 8v1M12 15v1"/></svg></div>
+              <div class="title">My earnings</div>
+            </a>
+          </div>
+        </div>
+
+        <div class="wallet-main">
+          <h3 style="margin-top:0;">Assigned orders</h3>
+          <div id="orders-loading" class="spinner-center"><span class="spinner"></span></div>
+          <div id="orders-empty" class="empty-state" style="display:none;">
+            <div class="empty-icon"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5 9 5 9-5z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></div>
+            <p>No active deliveries right now</p>
+          </div>
+          <div id="orders-list"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const MIN_FLOAT = 100000; // must match settings.AGENT_MINIMUM_FLOAT
+
+document.addEventListener('DOMContentLoaded', async () => {
+  requireAgent();
+  renderAuthNav();
+
+  try {
+    const profile = await apiFetch('/auth/profile/');
+    document.getElementById('greeting').textContent = `Hi, ${profile.first_name || 'Agent'}`;
+  } catch (e) { /* non-fatal */ }
+
+  loadFloat();
+  loadActiveOrders();
+});
+
+async function loadFloat() {
+  try {
+    const wallet = await apiFetch('/wallet/');
+    document.getElementById('float-amount').textContent = formatUGX(wallet.balance);
+    if (wallet.balance < MIN_FLOAT) {
+      document.getElementById('balance-card').classList.add('warning');
+      const warn = document.getElementById('float-warning');
+      warn.style.display = 'block';
+      warn.textContent = `Below the required minimum of ${formatUGX(MIN_FLOAT)}. Top up to keep crediting customers.`;
+    }
+  } catch (e) {
+    showError(e);
+  }
+}
+
+async function loadActiveOrders() {
+  try {
+    const orders = await apiFetch('/orders/');
+    const list = (orders.results || orders).filter(o => ['assigned', 'picked_up', 'dispatched'].includes(o.status));
+    document.getElementById('orders-loading').style.display = 'none';
+
+    if (!list.length) {
+      document.getElementById('orders-empty').style.display = 'block';
+      return;
+    }
+
+    document.getElementById('orders-list').innerHTML = list.map(o => `
+      <a class="order-row" href="/orders/${o.id}/">
+        <div>
+          <div class="order-id">Order #${o.id} - ${escapeHtml(o.district_name || '')}</div>
+          <div class="order-meta">${escapeHtml(o.status)}</div>
+        </div>
+      </a>
+    `).join('');
+  } catch (e) {
+    document.getElementById('orders-loading').style.display = 'none';
+    showError(e);
+  }
+}
+</script>
+{% endblock %}

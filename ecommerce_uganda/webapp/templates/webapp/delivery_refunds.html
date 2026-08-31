@@ -1,0 +1,68 @@
+{% extends 'webapp/base.html' %}
+{% load static %}
+
+{% block title %}Delivery &amp; Refunds| Clarastock{% endblock %}
+{% block description %}How delivery, confirmation, and refunds work at Clarastock.{% endblock %}
+
+{% block content %}
+<section class="tight">
+    <div class="container">
+      <span class="hero-eyebrow mono">Delivery &amp; Refunds</span>
+      <h1>How your order gets to you</h1>
+      <p class="policy-meta">Applies to every order placed through the Clarastock app or website</p>
+
+      <div class="policy-body">
+
+        <h2>Hub towns get direct delivery</h2>
+        <p>If you're in Kampala, Mbarara, Gulu, Mbale, or Tororo–Busia, an
+        agent delivers your order directly: no forwarding, no extra hops.</p>
+
+        <h2>Everywhere else, we forward it by taxi or bus</h2>
+        <p>Districts outside the five hubs are served by forwarding: your
+        order is picked up by the nearest hub's agent, then sent onward by
+        taxi or bus along a real route: the same way people already send
+        parcels and goods across Uganda. The agent records a transport
+        reference (the route, and driver contact where available) so your
+        order can be traced if anything goes wrong.</p>
+
+        <div class="callout">
+          Forwarded orders may take longer to arrive than hub-town orders,
+          since they depend on transport availability along that route.
+        </div>
+
+        <h2>Confirming your order</h2>
+        <p>Once your order is out for delivery, you'll see a "Confirm
+        received" option in the app. Tap it as soon as your order arrives:
+        this is what closes out the order and, for hub agents, releases
+        their commission.</p>
+        <p>If your order hasn't arrived and you don't confirm within
+        <strong>24 hours</strong> of dispatch, it's automatically flagged for
+        investigation. You can also flag it as "Not received" yourself at
+        any point before that, if something feels wrong.</p>
+
+        <h2>What happens when an order is flagged</h2>
+        <p>A flagged order goes to our team for investigation, using the
+        agent and transport details recorded for that order. We reach out to
+        the agent (and the transport contact, for forwarded orders) to
+        trace what happened.</p>
+        <ul>
+          <li><strong>Order located and delivered</strong>: you confirm as normal, the flag clears.</li>
+          <li><strong>Order confirmed lost</strong>: the full order amount is refunded directly to your wallet.</li>
+        </ul>
+
+        <h2>Refunds go to your wallet</h2>
+        <p>Refunds aren't sent back to your mobile money account: they're
+        credited to your Clarastock wallet, ready to use on your next order
+        or to withdraw through an agent. This keeps the whole record: what
+        you paid, what you were refunded: in one traceable place.</p>
+
+        <h2>Delivery fees</h2>
+        <p>Orders forwarded beyond a hub town may carry an additional
+        delivery fee to cover the taxi/bus leg: this is shown at checkout
+        before you pay, so there are no surprises.</p>
+
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
